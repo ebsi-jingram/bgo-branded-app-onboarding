@@ -125,9 +125,16 @@ export type OwnerRole =
 /** Nothing in this prototype is approved company process. */
 export type ApprovalStatus = 'not-approved' | 'pending-review'
 
+export type Owners = readonly [OwnerRole, ...OwnerRole[]]
+
 export type BlockReason<Id extends string> =
+  /** No agreed procedure exists yet, so nobody can carry out the task. */
   | { kind: 'open-question'; id: StakeholderQuestionId }
-  | { kind: 'unknown-answer'; field: AnswerField }
+  /** The client's answer is unknown, undecided or "no" where "yes" is needed. */
+  | { kind: 'needs-answer'; field: AnswerField }
+  /** A blocker category the client reported in the questionnaire. */
+  | { kind: 'client-blocker'; category: BlockerCategory }
+  /** A prerequisite task is itself blocked. */
   | { kind: 'upstream'; id: Id }
 
 export interface Prerequisite<Id extends string> {
@@ -150,7 +157,8 @@ export interface Procedure<Id extends string = string> {
   audience: 'client' | 'internal'
   phase: PhaseId
   platform: Platform | 'shared'
-  owner: OwnerRole
+  /** A function when the owner depends on the answers (e.g. the client acts when Empyrean has no access). */
+  owners: Owners | ((answers: OnboardingAnswers) => Owners)
   sources: readonly [SourceRef, ...SourceRef[]]
   approval: ApprovalStatus
   appliesWhen: (answers: OnboardingAnswers) => boolean
@@ -165,6 +173,8 @@ export interface Procedure<Id extends string = string> {
   openQuestions?: readonly StakeholderQuestionId[]
   /** SecretSpec field names, taken from the Oct 29 draft. Not yet verified against brands/specs/. */
   producesFields?: readonly string[]
+  /** Resource files (e.g. Firebase config files), taken from the Oct 29 draft. Not yet verified. */
+  producesResources?: readonly string[]
 }
 
 /** V1 is intake only: tasks are Planned or Blocked, never Ready or Completed. */
@@ -176,9 +186,16 @@ export interface GeneratedTask<Id extends string = string> {
   procedure: Procedure<Id>
   /** 1-based position in the dependency-ordered list. */
   order: number
-  /** Tasks in the same wave have no dependency on each other and can run in parallel. */
+  /** 1-based. A task's wave is one more than its latest prerequisite's, so tasks in a wave can run in parallel. */
   wave: number
+  owners: Owners
+  /** Direct prerequisites that apply to these answers. Prerequisites that don't apply are dropped. */
+  prerequisites: readonly Id[]
   state: TaskState<Id>
+}
+
+export interface Checklist<Id extends string = string> {
+  tasks: readonly GeneratedTask<Id>[]
 }
 
 export type ChecklistError<Id extends string = string> =

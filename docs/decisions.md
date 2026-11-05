@@ -2,6 +2,24 @@
 
 Newest first. Each entry says what was decided, why, and what was rejected.
 
+## 2026-11-05: Checklist engine rules (M2)
+- **Prerequisites that don't apply are dropped, not bridged.** Each procedure lists every
+  prerequisite it really needs, so a reader can see a task's dependencies in one place.
+  *Rejected:* bridging through skipped tasks. It quietly added unrelated dependencies (e.g. Apple
+  steps waiting on Google registration).
+- **Every task except the first always keeps at least one prerequisite.** Found during M2: when all
+  of a task's prerequisites were dropped, it floated free and stayed Planned even when the whole plan
+  should be blocked. The every-combination test now checks this for all 9,504 answer combinations.
+- **Cycles are checked on the graph that applies to the answers.** Google app-level access reverses
+  the order of the Play app and the invitation, so the full registry legitimately has mutually
+  exclusive edges in both directions.
+- **Only two open questions block tasks: Q17 (no-access exception) and Q15 (unlisted distribution).**
+  For those, no procedure exists at all. Other open questions are shown on the task but don't block,
+  because the work can start under current practice.
+- **Reported blocker categories map to tasks** [P]: D-U-N-S and organization verification block
+  enrollment; internal approvals and an existing-account conflict block invitations. "Other" only
+  appears in the intake summary.
+
 ## 2026-11-05: V1 is intake only
 - **Decision:** the questionnaire describes the client's situation and generates a plan. It doesn't
   track progress. Tasks are Planned or Blocked only.
