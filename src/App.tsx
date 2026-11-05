@@ -17,7 +17,7 @@ function App() {
         <span className="banner__tag">Prototype · not approved process · fictional data only</span>
       </header>
       <div className="brand-stripe" aria-hidden="true" />
-      <main className="page">
+      <main className={screen.kind === 'results' ? 'page page--wide' : 'page'}>
         {screen.kind === 'welcome' && <Welcome onStart={() => dispatch({ type: 'start' })} />}
         {screen.kind === 'question' && (
           <QuestionStep
