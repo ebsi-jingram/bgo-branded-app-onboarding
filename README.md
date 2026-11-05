@@ -1,22 +1,23 @@
-# BGO Branded App Onboarding (Prototype)
+# Benefits Go Branded App Setup (Preview)
 
-> **Prototype, not approved process.** This is an exploratory add-on to SKY-2640. The official
-> deliverables are the Confluence playbook and the client-facing developer account guide.
-> Nothing here is approved company policy, and all client data is fictional.
+> **Preview, not yet approved for client use.** An exploratory add-on to SKY-2640. The official
+> deliverables are the client-facing developer account guide and the Confluence playbook. All
+> example data is fictional.
 
-A local web app that asks a few questions about a client's branded Benefits Go setup
-(platforms, Apple and Google account status, access model, contacts, restrictions) and
-generates:
+A self-serve website for clients setting up a branded Benefits Go app. Instead of reading the full
+setup guide, the client answers five short questions (app stores, existing accounts, the access they
+can give Empyrean, approvals) and gets a personalized checklist:
 
-1. **Intake summary:** what we know, what's unknown, and which decisions are pending.
-2. **Implementation checklist:** a dependency-ordered list of tasks for this client's
-   situation, each with owner, prerequisites, completion criteria, source and status.
+- Only the steps that apply to them, in the order they can be done
+- Plain instructions from the setup guide, with links to the right Apple and Google pages
+- **Mark as done** checkboxes and a progress bar; later steps unlock as earlier ones are finished
+- Progress saved in their browser, so they can come back later
 
 ## Run it
 
 ```bash
 npm install
-npm run dev     # local dev server
+npm run dev     # then open the link it prints (usually http://localhost:5173)
 npm test        # unit tests (Vitest)
 npm run lint    # oxlint
 npm run build   # type-check and production build
@@ -27,33 +28,20 @@ Requires Node 20 or newer.
 ## How it works
 
 ```
-questions (UI) → DraftAnswers → normalize() → OnboardingAnswers → generateChecklist() → results
+questions → DraftAnswers → normalize() → OnboardingAnswers → orderSteps(CLIENT_STEPS) → checklist
 ```
 
-- `src/types/onboarding.ts`: the domain types. Impossible states (no platform selected,
-  Apple answers on an Android-only project) can't be represented.
-- `src/domain/normalize.ts`: validates in-progress answers and drops answers that no longer apply.
-- `src/data/procedures.ts` (M2): the playbook as typed data. Each task has a source tag and
-  an approval status.
-- `src/engine/` (M2): pure checklist generation with dependency ordering, parallel waves and
-  Blocked states. No React.
-
-## Source tags
-
-| Tag | Meaning |
-|---|---|
-| C | Connect's established procedure |
-| T | Carlos's technical guidance |
-| G | SKY-2640 client-facing guide draft (not yet approved) |
-| P | Proposed by this prototype; not confirmed by anyone |
-| Q | Depends on a pending decision in `docs/open-questions.md` |
+- `src/data/clientSteps.ts`: the client's steps, each taken from a section of the setup guide.
+- `src/engine/orderSteps.ts`: picks the steps that apply and orders them by prerequisites.
+- `src/checklist/`: progress rules (what's done, ready or locked) and browser storage.
+- `src/questionnaire/flow.ts`: the screen flow as a pure, tested reducer.
 
 ## Limitations
 
-- Intake only: tasks are shown as Planned or Blocked. There is no progress tracking.
-- No backend, accounts, uploads, integrations or hosting.
-- Never collects credentials, signing material, personal details or identity documents.
-- SecretSpec field names come from an Oct 29 draft and have not been verified against the brands repo.
+- Progress is stored only in the client's browser. Empyrean can't see it, and it doesn't move between devices.
+- The Empyrean invitation address and secure-transfer method aren't decided yet, so steps refer to
+  "your Implementation representative".
+- The setup guide itself is a draft and not yet approved for distribution.
 - Theme colors are read from the Benefits Go app icon, not from an official brand guide. Confirm with Design before any real use.
 
-See `docs/decisions.md` for design decisions and `docs/open-questions.md` for pending stakeholder questions.
+See `docs/decisions.md` for design decisions and `docs/open-questions.md` for pending questions.

@@ -9,24 +9,18 @@ const complete: DraftAnswers = {
   appleAccess: 'admin',
   googleAccountStatus: 'active',
   googleAccess: 'account-admin',
-  clientContactConfirmed: 'yes',
-  securityRestrictions: 'no',
-  knownBlockers: [],
+  securityReview: 'no',
 }
 
 describe('normalize', () => {
   it('accepts complete answers for both platforms', () => {
-    const result = normalize(complete)
-    expect(result).toEqual({
+    expect(normalize(complete)).toEqual({
       ok: true,
       value: {
         organizationName: 'Example Health Co',
         apple: { accountStatus: 'active', access: 'admin' },
         google: { accountStatus: 'active', access: 'account-admin' },
-        clientContactConfirmed: 'yes',
-        registration: null,
-        securityRestrictions: 'no',
-        knownBlockers: [],
+        securityReview: 'no',
       },
     })
   })
@@ -43,43 +37,21 @@ describe('normalize', () => {
   })
 
   it('does not require answers for a platform that is not selected', () => {
-    const result = normalize({
-      ...complete,
-      platforms: ['android'],
-      appleAccountStatus: undefined,
-      appleAccess: undefined,
-    })
-    expect(result.ok).toBe(true)
+    expect(normalize({ ...complete, platforms: ['android'], appleAccountStatus: undefined, appleAccess: undefined }).ok).toBe(true)
   })
 
   it('requires at least one platform', () => {
-    const result = normalize({ ...complete, platforms: [] })
-    expect(result).toEqual({ ok: false, error: [expect.objectContaining({ field: 'platforms' })] })
+    expect(normalize({ ...complete, platforms: [] })).toEqual({
+      ok: false,
+      error: [expect.objectContaining({ field: 'platforms' })],
+    })
   })
 
   it('rejects a blank organization name', () => {
-    const result = normalize({ ...complete, organizationName: '   ' })
-    expect(result).toEqual({ ok: false, error: [expect.objectContaining({ field: 'organizationName' })] })
-  })
-
-  it('requires registration contacts when an account must be created', () => {
-    const result = normalize({ ...complete, googleAccountStatus: 'none' })
-    expect(result).toEqual({
+    expect(normalize({ ...complete, organizationName: '   ' })).toEqual({
       ok: false,
-      error: [expect.objectContaining({ field: 'registrationContactsReady' })],
+      error: [expect.objectContaining({ field: 'organizationName' })],
     })
-    const fixed = normalize({ ...complete, googleAccountStatus: 'none', registrationContactsReady: 'unsure' })
-    expect(fixed.ok && fixed.value.registration).toEqual({ contactsReady: 'unsure' })
-  })
-
-  it('ignores registration contacts for a platform that is no longer selected', () => {
-    const result = normalize({
-      ...complete,
-      platforms: ['ios'],
-      googleAccountStatus: 'none',
-      registrationContactsReady: 'yes',
-    })
-    expect(result.ok && result.value.registration).toBe(null)
   })
 
   it('reports every missing answer at once', () => {
@@ -92,19 +64,12 @@ describe('normalize', () => {
       'appleAccess',
       'googleAccountStatus',
       'googleAccess',
-      'clientContactConfirmed',
-      'securityRestrictions',
-      'knownBlockers',
+      'securityReview',
     ])
   })
 
-  it('removes duplicate platforms and blockers', () => {
-    const result = normalize({
-      ...complete,
-      platforms: ['ios', 'ios'],
-      knownBlockers: ['duns-number', 'duns-number'],
-    })
-    expect(result.ok && result.value.knownBlockers).toEqual(['duns-number'])
+  it('removes duplicate platforms', () => {
+    const result = normalize({ ...complete, platforms: ['ios', 'ios'] })
     expect(result.ok && result.value.google).toBe(null)
   })
 })

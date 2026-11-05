@@ -12,6 +12,8 @@ import type {
   ValidationError,
 } from '../types/onboarding'
 
+type Missing = (field: AnswerField, message: string) => void
+
 /**
  * Turns in-progress answers into complete, consistent OnboardingAnswers.
  *
@@ -20,56 +22,31 @@ import type {
  */
 export function normalize(draft: DraftAnswers): Result<OnboardingAnswers, ValidationError[]> {
   const errors: ValidationError[] = []
-  const missing = (field: AnswerField, message: string) => {
+  const missing: Missing = (field, message) => {
     errors.push({ field, message })
   }
 
   const organizationName = draft.organizationName?.trim() || undefined
-  if (organizationName === undefined) missing('organizationName', 'Enter an organization name.')
+  if (organizationName === undefined) missing('organizationName', "Enter your organization's name.")
 
   const platforms = new Set<Platform>(draft.platforms ?? [])
-  if (platforms.size === 0) missing('platforms', 'Select at least one platform.')
+  if (platforms.size === 0) missing('platforms', 'Choose at least one app store.')
 
   const apple = platforms.has('ios')
-    ? platformAnswers(draft.appleAccountStatus, draft.appleAccess, 'appleAccountStatus', 'appleAccess', 'Apple', missing)
+    ? platformAnswers(draft.appleAccountStatus, draft.appleAccess, 'appleAccountStatus', 'appleAccess', missing)
     : undefined
   const google = platforms.has('android')
-    ? platformAnswers(draft.googleAccountStatus, draft.googleAccess, 'googleAccountStatus', 'googleAccess', 'Google Play', missing)
+    ? platformAnswers(draft.googleAccountStatus, draft.googleAccess, 'googleAccountStatus', 'googleAccess', missing)
     : undefined
   const selection = selectPlatforms(platforms, apple, google)
 
-  const registration = registrationAnswers(draft, platforms, missing)
+  const { securityReview } = draft
+  if (securityReview === undefined) missing('securityReview', 'Choose an answer.')
 
-  const { clientContactConfirmed, securityRestrictions } = draft
-  if (clientContactConfirmed === undefined) missing('clientContactConfirmed', 'Say whether a primary contact is confirmed.')
-  if (securityRestrictions === undefined) missing('securityRestrictions', 'Say whether security restrictions apply.')
-
-  const knownBlockers = draft.knownBlockers === undefined ? undefined : [...new Set(draft.knownBlockers)]
-  if (knownBlockers === undefined) missing('knownBlockers', 'Select any known blockers, or "None".')
-
-  if (
-    errors.length > 0 ||
-    organizationName === undefined ||
-    selection === undefined ||
-    registration === undefined ||
-    clientContactConfirmed === undefined ||
-    securityRestrictions === undefined ||
-    knownBlockers === undefined
-  ) {
+  if (errors.length > 0 || organizationName === undefined || selection === undefined || securityReview === undefined) {
     return { ok: false, error: errors }
   }
-
-  return {
-    ok: true,
-    value: {
-      ...selection,
-      organizationName,
-      clientContactConfirmed,
-      registration,
-      securityRestrictions,
-      knownBlockers,
-    },
-  }
+  return { ok: true, value: { ...selection, organizationName, securityReview } }
 }
 
 function platformAnswers<Access>(
@@ -77,11 +54,10 @@ function platformAnswers<Access>(
   access: Access | undefined,
   statusField: AnswerField,
   accessField: AnswerField,
-  storeName: string,
-  missing: (field: AnswerField, message: string) => void,
+  missing: Missing,
 ): PlatformAnswers<Access> | undefined {
-  if (accountStatus === undefined) missing(statusField, `Select the ${storeName} account status.`)
-  if (access === undefined) missing(accessField, `Select the ${storeName} access model.`)
+  if (accountStatus === undefined) missing(statusField, 'Choose an answer.')
+  if (access === undefined) missing(accessField, 'Choose an answer.')
   return accountStatus === undefined || access === undefined ? undefined : { accountStatus, access }
 }
 
@@ -96,27 +72,4 @@ function selectPlatforms(
   if (ios) return apple ? { apple, google: null } : undefined
   if (android) return google ? { apple: null, google } : undefined
   return undefined
-}
-
-/** Returns null when no registration is needed, undefined when the required answer is missing. */
-function registrationAnswers(
-  draft: DraftAnswers,
-  platforms: ReadonlySet<Platform>,
-  missing: (field: AnswerField, message: string) => void,
-): OnboardingAnswers['registration'] | undefined {
-  if (!needsRegistration(draft, platforms)) return null
-  const contactsReady = draft.registrationContactsReady
-  if (contactsReady === undefined) {
-    missing('registrationContactsReady', 'Say whether the registration contacts are identified.')
-    return undefined
-  }
-  return { contactsReady }
-}
-
-/** Shared with the question flow so the contacts question shows exactly when normalize() requires it. */
-export function needsRegistration(draft: DraftAnswers, platforms: ReadonlySet<Platform>): boolean {
-  return (
-    (platforms.has('ios') && draft.appleAccountStatus === 'none') ||
-    (platforms.has('android') && draft.googleAccountStatus === 'none')
-  )
 }

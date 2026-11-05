@@ -2,6 +2,27 @@
 
 Newest first. Each entry says what was decided, why, and what was rejected.
 
+## 2026-11-05: Client-facing, self-serve setup walkthrough
+- **Decision (Jacques):** the site is for clients, not for Empyrean staff. Sales can point clients to it:
+  "instead of reading the documentation, this walks you through everything". Clients answer five short
+  questions, then get only their own steps from the client guide, in order, with checkboxes and a
+  progress bar.
+- **Removed:** the internal 63-step implementation plan, its engine and results view (commits up to
+  `c262e91` have them). The internal process is documented in the Confluence playbook; duplicating it
+  here added scope without helping clients.
+- **Reverses "V1 is intake only":** clients can now mark steps done. A checkmark means "the client says
+  it's done", not "Empyrean verified it"; verification stays with Empyrean (client guide §9).
+- **Progress is saved in the client's browser only.** Nothing is sent anywhere. Letting Empyrean see a
+  client's progress needs accounts, a server and hosting (Q23), and is out of scope for the preview.
+- **Steps unlock in order:** a step can't be checked until its prerequisites are; un-checking a step
+  also un-checks steps that depend on it; changing an answer keeps only progress that still makes sense.
+- **Guards in tests:** client-facing text may not mention internal names (Connect, Jira, SecretSpec,
+  team members, open-question IDs), and links may only point to official Apple and Google pages.
+- **Pending (Q21):** whether clients should use this at all is a stakeholder decision. The banner says
+  "Preview, not yet approved for client use".
+- **Followed the guide where it was silent:** App Store Connect API access is only a client step under
+  App Manager. The guide's §8 is "only if requested", so the Admin path doesn't ask for it (see Q25).
+
 ## 2026-11-05: Checklist engine rules (M2)
 - **Prerequisites that don't apply are dropped, not bridged.** Each procedure lists every
   prerequisite it really needs, so a reader can see a task's dependencies in one place.

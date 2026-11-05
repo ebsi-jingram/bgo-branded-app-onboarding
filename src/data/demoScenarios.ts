@@ -7,12 +7,12 @@ export interface DemoScenario {
   answers: DraftAnswers
 }
 
-/** Fictional organizations only. Scenarios A–D come from the SKY-2640 handoff. */
+/** Fictional organizations only. Presenter shortcuts for demos. */
 export const DEMO_SCENARIOS: readonly DemoScenario[] = [
   {
     id: 'A',
-    title: 'Existing accounts, Admin access',
-    description: 'Both stores already set up; the client grants the preferred Admin access.',
+    title: 'Accounts ready, Admin access',
+    description: 'Both stores set up already. The shortest path.',
     answers: {
       organizationName: 'Lakeside Manufacturing (fictional)',
       platforms: ['ios', 'android'],
@@ -20,30 +20,25 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       appleAccess: 'admin',
       googleAccountStatus: 'active',
       googleAccess: 'account-admin',
-      clientContactConfirmed: 'yes',
-      securityRestrictions: 'no',
-      knownBlockers: [],
+      securityReview: 'no',
     },
   },
   {
     id: 'B',
-    title: 'New Apple account',
-    description: 'iOS only. The client has to enroll in the Apple Developer Program first.',
+    title: 'New to Apple',
+    description: 'iOS only, and the Apple Developer account still needs creating.',
     answers: {
       organizationName: 'Cedar Valley Schools (fictional)',
       platforms: ['ios'],
       appleAccountStatus: 'none',
       appleAccess: 'admin',
-      clientContactConfirmed: 'yes',
-      registrationContactsReady: 'yes',
-      securityRestrictions: 'no',
-      knownBlockers: [],
+      securityReview: 'no',
     },
   },
   {
     id: 'C',
-    title: 'Mixed account status, limited access',
-    description: 'Apple exists with App Manager; Google Play must be registered and will use app-level access.',
+    title: 'Limited access, security review',
+    description: 'App Manager on Apple, a new Google account with app-only access.',
     answers: {
       organizationName: 'Harborline Logistics (fictional)',
       platforms: ['ios', 'android'],
@@ -51,26 +46,21 @@ export const DEMO_SCENARIOS: readonly DemoScenario[] = [
       appleAccess: 'app-manager',
       googleAccountStatus: 'none',
       googleAccess: 'app-admin',
-      clientContactConfirmed: 'yes',
-      registrationContactsReady: 'yes',
-      securityRestrictions: 'yes',
-      knownBlockers: [],
+      securityReview: 'yes',
     },
   },
   {
     id: 'D',
-    title: 'No Empyrean access',
-    description: 'Both accounts exist, but the client will not invite Empyrean.',
+    title: 'Still figuring things out',
+    description: 'Not sure about the Apple account, and access needs a conversation.',
     answers: {
       organizationName: 'Summit Ridge Health (fictional)',
       platforms: ['ios', 'android'],
-      appleAccountStatus: 'active',
-      appleAccess: 'no-access',
+      appleAccountStatus: 'unsure',
+      appleAccess: 'admin',
       googleAccountStatus: 'active',
-      googleAccess: 'no-access',
-      clientContactConfirmed: 'yes',
-      securityRestrictions: 'no',
-      knownBlockers: [],
+      googleAccess: 'needs-discussion',
+      securityReview: 'unsure',
     },
   },
 ]

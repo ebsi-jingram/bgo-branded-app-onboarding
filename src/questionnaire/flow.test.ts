@@ -1,28 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_SCENARIOS } from '../data/demoScenarios'
-import type { DraftAnswers, Screen } from '../types/onboarding'
-import { type Action, reduce, stepErrors, visibleSteps } from './flow'
+import type { DraftAnswers } from '../types/onboarding'
+import { type Action, type AppState, initialState, reduce, stepErrors, visibleSteps } from './flow'
 
-const run = (screen: Screen, ...actions: Action[]) => actions.reduce(reduce, screen)
+const run = (state: AppState, ...actions: Action[]) => actions.reduce(reduce, state)
+const at = (screen: AppState['screen'], done: AppState['done'] = []): AppState => ({ screen, done })
 const complete: DraftAnswers = DEMO_SCENARIOS[0]!.answers
 
 describe('visibleSteps', () => {
   it('shows only the store steps for the selected platforms', () => {
-    expect(visibleSteps({ platforms: ['ios'] })).toEqual(['organization', 'platforms', 'apple', 'contacts', 'restrictions'])
-    expect(visibleSteps({ platforms: ['android'] })).toEqual(['organization', 'platforms', 'google', 'contacts', 'restrictions'])
-    expect(visibleSteps({})).toEqual(['organization', 'platforms', 'contacts', 'restrictions'])
+    expect(visibleSteps({ platforms: ['ios'] })).toEqual(['organization', 'platforms', 'apple', 'security'])
+    expect(visibleSteps({ platforms: ['android'] })).toEqual(['organization', 'platforms', 'google', 'security'])
+    expect(visibleSteps({})).toEqual(['organization', 'platforms', 'security'])
   })
 })
 
 describe('stepErrors', () => {
-  it('asks for registration contacts only when an account must be created', () => {
-    const base = { ...complete, platforms: ['ios' as const], clientContactConfirmed: 'yes' as const }
-    expect(stepErrors('contacts', base)).toEqual([])
-    expect(stepErrors('contacts', { ...base, appleAccountStatus: 'none' }).map((e) => e.field)).toEqual([
-      'registrationContactsReady',
-    ])
-  })
-
   it("ignores other steps' missing answers", () => {
     expect(stepErrors('organization', { organizationName: 'Acme (fictional)' })).toEqual([])
   })
@@ -30,7 +23,7 @@ describe('stepErrors', () => {
 
 describe('reduce', () => {
   it('starts at the first question with no answers', () => {
-    expect(run({ kind: 'welcome' }, { type: 'start' })).toEqual({
+    expect(run(initialState, { type: 'start' }).screen).toEqual({
       kind: 'question',
       step: 'organization',
       draft: {},
@@ -39,59 +32,67 @@ describe('reduce', () => {
   })
 
   it('stays on a step and shows errors until it is answered', () => {
-    const screen = run({ kind: 'welcome' }, { type: 'start' }, { type: 'continue' })
-    expect(screen).toMatchObject({ kind: 'question', step: 'organization', showErrors: true })
-    expect(run(screen, { type: 'update', patch: { organizationName: 'Acme (fictional)' } }, { type: 'continue' })).toMatchObject({
+    const state = run(initialState, { type: 'start' }, { type: 'continue' })
+    expect(state.screen).toMatchObject({ kind: 'question', step: 'organization', showErrors: true })
+    expect(run(state, { type: 'update', patch: { organizationName: 'Acme (fictional)' } }, { type: 'continue' }).screen).toMatchObject({
       step: 'platforms',
       showErrors: false,
     })
   })
 
-  it('skips the Google step for iOS-only and reaches results', () => {
-    const screen = run(
-      { kind: 'question', step: 'platforms', draft: { ...complete, platforms: ['ios'] }, showErrors: false },
+  it('skips the Google step for iOS only and reaches the checklist', () => {
+    const state = run(
+      at({ kind: 'question', step: 'platforms', draft: { ...complete, platforms: ['ios'] }, showErrors: false }),
       { type: 'continue' },
       { type: 'continue' },
     )
-    expect(screen).toMatchObject({ kind: 'question', step: 'contacts' })
-    const results = run(screen, { type: 'continue' }, { type: 'continue' })
-    expect(results.kind).toBe('results')
-    expect(results.kind === 'results' && results.answers.google).toBe(null)
+    expect(state.screen).toMatchObject({ kind: 'question', step: 'security' })
+    const checklist = run(state, { type: 'continue' }).screen
+    expect(checklist.kind).toBe('checklist')
+    expect(checklist.kind === 'checklist' && checklist.answers.google).toBe(null)
   })
 
   it('goes back through visible steps, then to the welcome screen', () => {
-    const start: Screen = { kind: 'question', step: 'contacts', draft: { ...complete, platforms: ['android'] }, showErrors: false }
-    expect(run(start, { type: 'back' })).toMatchObject({ step: 'google' })
-    expect(run(start, { type: 'back' }, { type: 'back' }, { type: 'back' }, { type: 'back' })).toEqual({ kind: 'welcome' })
+    const start = at({ kind: 'question', step: 'security', draft: { ...complete, platforms: ['android'] }, showErrors: false })
+    expect(run(start, { type: 'back' }).screen).toMatchObject({ step: 'google' })
+    expect(run(start, { type: 'back' }, { type: 'back' }, { type: 'back' }, { type: 'back' }).screen).toEqual({ kind: 'welcome' })
   })
 
-  it('returns from results to the last step with answers kept', () => {
-    const results = run({ kind: 'question', step: 'restrictions', draft: complete, showErrors: false }, { type: 'continue' })
-    expect(results.kind).toBe('results')
-    expect(run(results, { type: 'back' })).toEqual({ kind: 'question', step: 'restrictions', draft: complete, showErrors: false })
+  it('keeps progress when the client changes an answer that does not affect it', () => {
+    const checklist = run(initialState, { type: 'load', draft: complete })
+    const ticked = run(checklist, { type: 'toggle-step', id: 'invite-apple-admin' })
+    expect(ticked.done).toEqual(['invite-apple-admin'])
+    const edited = run(ticked, { type: 'back' }, { type: 'update', patch: { securityReview: 'no' } }, { type: 'continue' })
+    expect(edited.screen.kind).toBe('checklist')
+    expect(edited.done).toEqual(['invite-apple-admin'])
   })
 
-  it('loads a demo scenario straight into results', () => {
+  it('un-ticks a step when a new answer adds a step that must come first', () => {
+    const ticked = run(initialState, { type: 'load', draft: complete }, { type: 'toggle-step', id: 'invite-apple-admin' })
+    const edited = run(ticked, { type: 'back' }, { type: 'update', patch: { securityReview: 'yes' } }, { type: 'continue' })
+    expect(edited.done).toEqual([])
+  })
+
+  it('loads every demo scenario straight into the checklist', () => {
     for (const scenario of DEMO_SCENARIOS) {
-      const screen = run({ kind: 'welcome' }, { type: 'load', draft: scenario.answers })
-      expect(screen.kind, scenario.id).toBe('results')
+      expect(run(initialState, { type: 'load', draft: scenario.answers }).screen.kind, scenario.id).toBe('checklist')
     }
   })
 
   it('sends an incomplete loaded draft to its first unanswered step', () => {
-    expect(run({ kind: 'welcome' }, { type: 'load', draft: { organizationName: 'Acme (fictional)' } })).toMatchObject({
+    expect(run(initialState, { type: 'load', draft: { organizationName: 'Acme (fictional)' } }).screen).toMatchObject({
       kind: 'question',
       step: 'platforms',
       showErrors: true,
     })
   })
 
-  it('restarts from anywhere', () => {
-    expect(run({ kind: 'question', step: 'apple', draft: complete, showErrors: true }, { type: 'restart' })).toEqual({ kind: 'welcome' })
+  it('restarts from anywhere and clears progress', () => {
+    const ticked = run(initialState, { type: 'load', draft: complete }, { type: 'toggle-step', id: 'invite-apple-admin' })
+    expect(run(ticked, { type: 'restart' })).toEqual(initialState)
   })
 
   it('ignores actions that make no sense for the current screen', () => {
-    const welcome: Screen = { kind: 'welcome' }
-    expect(run(welcome, { type: 'continue' }, { type: 'back' })).toBe(welcome)
+    expect(run(initialState, { type: 'continue' }, { type: 'back' }, { type: 'toggle-step', id: 'enroll-apple' })).toBe(initialState)
   })
 })
