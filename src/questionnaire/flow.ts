@@ -38,6 +38,8 @@ export type Action =
   | { type: 'continue' }
   | { type: 'back' }
   | { type: 'restart' }
+  /** Demo shortcut: load a complete set of answers and go straight to the plan. */
+  | { type: 'load'; draft: DraftAnswers }
 
 const FIRST_STEP: StepId = 'organization'
 
@@ -45,6 +47,7 @@ const question = (step: StepId, draft: DraftAnswers): Screen => ({ kind: 'questi
 
 export function reduce(screen: Screen, action: Action): Screen {
   if (action.type === 'restart') return { kind: 'welcome' }
+  if (action.type === 'load') return finish(action.draft)
 
   switch (screen.kind) {
     case 'welcome':

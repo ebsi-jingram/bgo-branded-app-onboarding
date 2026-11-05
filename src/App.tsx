@@ -18,7 +18,12 @@ function App() {
       </header>
       <div className="brand-stripe" aria-hidden="true" />
       <main className={screen.kind === 'results' ? 'page page--wide' : 'page'}>
-        {screen.kind === 'welcome' && <Welcome onStart={() => dispatch({ type: 'start' })} />}
+        {screen.kind === 'welcome' && (
+          <Welcome
+            onStart={() => dispatch({ type: 'start' })}
+            onLoadScenario={(scenario) => dispatch({ type: 'load', draft: scenario.answers })}
+          />
+        )}
         {screen.kind === 'question' && (
           <QuestionStep
             key={screen.step}

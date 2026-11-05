@@ -71,6 +71,21 @@ describe('reduce', () => {
     expect(run(results, { type: 'back' })).toEqual({ kind: 'question', step: 'restrictions', draft: complete, showErrors: false })
   })
 
+  it('loads a demo scenario straight into results', () => {
+    for (const scenario of DEMO_SCENARIOS) {
+      const screen = run({ kind: 'welcome' }, { type: 'load', draft: scenario.answers })
+      expect(screen.kind, scenario.id).toBe('results')
+    }
+  })
+
+  it('sends an incomplete loaded draft to its first unanswered step', () => {
+    expect(run({ kind: 'welcome' }, { type: 'load', draft: { organizationName: 'Acme (fictional)' } })).toMatchObject({
+      kind: 'question',
+      step: 'platforms',
+      showErrors: true,
+    })
+  })
+
   it('restarts from anywhere', () => {
     expect(run({ kind: 'question', step: 'apple', draft: complete, showErrors: true }, { type: 'restart' })).toEqual({ kind: 'welcome' })
   })

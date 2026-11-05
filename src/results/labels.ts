@@ -102,3 +102,7 @@ export function phaseRuns<Id extends string>(tasks: readonly GeneratedTask<Id>[]
   }
   return runs
 }
+
+/** A task the client has to do themselves, for these answers. */
+export const isClientTask = <Id extends string>(task: GeneratedTask<Id>): boolean =>
+  task.owners.some((owner) => owner === 'client' || owner === 'client-account-holder')

@@ -1,4 +1,11 @@
-export function Welcome({ onStart }: { onStart: () => void }) {
+import { DEMO_SCENARIOS, type DemoScenario } from '../data/demoScenarios'
+
+interface Props {
+  onStart: () => void
+  onLoadScenario: (scenario: DemoScenario) => void
+}
+
+export function Welcome({ onStart, onLoadScenario }: Props) {
   return (
     <section className="card card--welcome">
       <img className="welcome-logo" src="/branding/bgo-icon.png" alt="Benefits Go" />
@@ -15,6 +22,19 @@ export function Welcome({ onStart }: { onStart: () => void }) {
       <button type="button" className="button button--primary" onClick={onStart}>
         Get started
       </button>
+
+      <h2 className="scenarios__title">Or jump to a demo scenario</h2>
+      <div className="scenarios">
+        {DEMO_SCENARIOS.map((scenario) => (
+          <button key={scenario.id} type="button" className="scenario" onClick={() => onLoadScenario(scenario)}>
+            <span className="scenario__id">{scenario.id}</span>
+            <span>
+              <span className="scenario__title">{scenario.title}</span>
+              <span className="scenario__description">{scenario.description}</span>
+            </span>
+          </button>
+        ))}
+      </div>
     </section>
   )
 }

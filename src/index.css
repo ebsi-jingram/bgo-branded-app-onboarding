@@ -299,14 +299,59 @@ body {
 }
 
 .phase {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
 }
 
 .phase__title {
-  font-size: 1rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-weight: 600;
   margin: 0 0 0.5rem;
-  padding-bottom: 0.25rem;
+  padding: 0.5rem 0.25rem;
   border-bottom: 2px solid var(--border);
+  cursor: pointer;
+}
+
+/* flex removes the native disclosure marker in Chrome, so draw one. */
+.phase__title {
+  list-style: none;
+}
+
+.phase__title::-webkit-details-marker {
+  display: none;
+}
+
+.phase__title::before {
+  content: '';
+  align-self: center;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  margin-right: 0.25rem;
+}
+
+.phase[open] > .phase__title::before {
+  transform: rotate(45deg);
+}
+
+.phase__name {
+  flex: 1;
+}
+
+.phase__counts {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.phase__blocked {
+  color: var(--error);
+  font-weight: 600;
 }
 
 .phase__number {
@@ -414,4 +459,115 @@ body {
   border: 1px solid var(--border);
   color: var(--muted);
   cursor: help;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.875rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.toolbar__links {
+  display: flex;
+  gap: 1rem;
+}
+
+.link-button {
+  font: inherit;
+  font-size: 0.875rem;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--bgo-indigo);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ----- Demo scenarios (welcome screen) ----- */
+
+.scenarios__title {
+  font-size: 1rem;
+  margin: 2rem 0 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.scenarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+
+.scenario {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  text-align: left;
+  font: inherit;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.scenario:hover {
+  border-color: var(--selected);
+}
+
+.scenario__id {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+  background: var(--bgo-navy);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.scenario__title {
+  display: block;
+  font-weight: 600;
+}
+
+.scenario__description {
+  display: block;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.segmented button:focus-visible,
+.link-button:focus-visible,
+.scenario:focus-visible,
+.phase__title:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--selected) 45%, transparent);
+  outline-offset: 2px;
 }

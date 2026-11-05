@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { PROCEDURES, type ProcedureId } from '../data/procedures'
 import { generateChecklist } from '../engine/generateChecklist'
 import {
@@ -6,11 +6,12 @@ import {
   PHASE_NAMES,
   SOURCE_LABELS,
   describeReason,
+  isClientTask,
   phaseRuns,
   platformLabel,
   titleOf,
 } from '../results/labels'
-import type { GeneratedTask, OnboardingAnswers } from '../types/onboarding'
+import type { GeneratedTask, OnboardingAnswers, SourceRef, SourceTag } from '../types/onboarding'
 
 interface Props {
   answers: OnboardingAnswers
@@ -18,8 +19,12 @@ interface Props {
   onRestart: () => void
 }
 
+type View = 'all' | 'client'
+
 export function Results({ answers, onBack, onRestart }: Props) {
   const result = useMemo(() => generateChecklist(PROCEDURES, answers), [answers])
+  const [view, setView] = useState<View>('all')
+  const [openPhases, setOpenPhases] = useState<ReadonlySet<string>>(new Set())
 
   if (!result.ok) {
     return (
@@ -33,9 +38,20 @@ export function Results({ answers, onBack, onRestart }: Props) {
     )
   }
 
-  const tasks = result.value.tasks
-  const blocked = tasks.filter((t) => t.state.kind === 'blocked').length
-  const clientTasks = tasks.filter((t) => t.owners.some((o) => o === 'client' || o === 'client-account-holder')).length
+  const allTasks = result.value.tasks
+  const clientTasks = allTasks.filter(isClientTask)
+  const shown = view === 'client' ? clientTasks : allTasks
+  const runs = phaseRuns(shown).map((run) => ({ ...run, key: `${run.phase}-${run.tasks[0]?.order}` }))
+  const blockedCount = (tasks: readonly GeneratedTask<ProcedureId>[]) => tasks.filter((t) => t.state.kind === 'blocked').length
+
+  const setPhaseOpen = (key: string, open: boolean) =>
+    setOpenPhases((current) => {
+      if (current.has(key) === open) return current
+      const next = new Set(current)
+      if (open) next.add(key)
+      else next.delete(key)
+      return next
+    })
 
   return (
     <section className="card">
@@ -47,15 +63,15 @@ export function Results({ answers, onBack, onRestart }: Props) {
         </div>
         <div>
           <dt>Steps</dt>
-          <dd>{tasks.length}</dd>
+          <dd>{allTasks.length}</dd>
         </div>
         <div>
           <dt>Blocked</dt>
-          <dd>{blocked}</dd>
+          <dd>{blockedCount(allTasks)}</dd>
         </div>
         <div>
           <dt>Client actions</dt>
-          <dd>{clientTasks}</dd>
+          <dd>{clientTasks.length}</dd>
         </div>
       </dl>
       <p className="lead">
@@ -64,18 +80,50 @@ export function Results({ answers, onBack, onRestart }: Props) {
       </p>
       <Actions onBack={onBack} onRestart={onRestart} />
 
-      {phaseRuns(tasks).map((run) => (
-        <section key={`${run.phase}-${run.tasks[0]?.order}`} className="phase">
-          <h2 className="phase__title">
-            <span className="phase__number">{run.phase}</span> {PHASE_NAMES[run.phase]}
-          </h2>
-          <ol className="task-list">
-            {run.tasks.map((task) => (
-              <TaskRow key={task.procedure.id} task={task} />
-            ))}
-          </ol>
-        </section>
-      ))}
+      <div className="toolbar">
+        <div className="segmented" role="group" aria-label="Which steps to show">
+          <button type="button" aria-pressed={view === 'all'} onClick={() => setView('all')}>
+            All steps ({allTasks.length})
+          </button>
+          <button type="button" aria-pressed={view === 'client'} onClick={() => setView('client')}>
+            Client steps ({clientTasks.length})
+          </button>
+        </div>
+        <div className="toolbar__links">
+          <button type="button" className="link-button" onClick={() => setOpenPhases(new Set(runs.map((r) => r.key)))}>
+            Expand all
+          </button>
+          <button type="button" className="link-button" onClick={() => setOpenPhases(new Set())}>
+            Collapse all
+          </button>
+        </div>
+      </div>
+
+      {runs.map((run) => {
+        const blocked = blockedCount(run.tasks)
+        return (
+          <details
+            key={run.key}
+            className="phase"
+            open={openPhases.has(run.key)}
+            onToggle={(event) => setPhaseOpen(run.key, event.currentTarget.open)}
+          >
+            <summary className="phase__title">
+              <span className="phase__number">{run.phase}</span>
+              <span className="phase__name">{PHASE_NAMES[run.phase]}</span>
+              <span className="phase__counts">
+                {run.tasks.length} {run.tasks.length === 1 ? 'step' : 'steps'}
+                {blocked > 0 && <span className="phase__blocked"> · {blocked} blocked</span>}
+              </span>
+            </summary>
+            <ol className="task-list">
+              {run.tasks.map((task) => (
+                <TaskRow key={task.procedure.id} task={task} />
+              ))}
+            </ol>
+          </details>
+        )
+      })}
 
       <Actions onBack={onBack} onRestart={onRestart} />
     </section>
@@ -103,9 +151,9 @@ function TaskRow({ task }: { task: GeneratedTask<ProcedureId> }) {
         {procedure.platform !== 'shared' && (
           <span className="chip chip--platform">{procedure.platform === 'ios' ? 'iOS' : 'Android'}</span>
         )}
-        {procedure.sources.map((source) => (
-          <span key={source.tag + source.note} className="chip chip--source" title={`${SOURCE_LABELS[source.tag]}: ${source.note}`}>
-            {source.tag}
+        {sourceTags(procedure.sources).map(({ tag, notes }) => (
+          <span key={tag} className="chip chip--source" title={`${SOURCE_LABELS[tag]}: ${notes.join('; ')}`}>
+            {tag}
           </span>
         ))}
       </div>
@@ -135,4 +183,11 @@ function Actions({ onBack, onRestart }: { onBack: () => void; onRestart: () => v
       </button>
     </div>
   )
+}
+
+/** One chip per tag; a tag cited twice (e.g. two of Carlos's sessions) lists both notes in its tooltip. */
+function sourceTags(sources: readonly SourceRef[]): { tag: SourceTag; notes: string[] }[] {
+  const byTag = new Map<SourceTag, string[]>()
+  for (const { tag, note } of sources) byTag.set(tag, [...(byTag.get(tag) ?? []), note])
+  return [...byTag].map(([tag, notes]) => ({ tag, notes }))
 }
