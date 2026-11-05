@@ -1,0 +1,53 @@
+# Decisions
+
+Newest first. Each entry says what was decided, why, and what was rejected.
+
+## 2026-11-05: V1 is intake only
+- **Decision:** the questionnaire describes the client's situation and generates a plan. It doesn't
+  track progress. Tasks are Planned or Blocked only.
+- **Why:** the client guide draft suggests status questions ("invitations sent?", "Engineering
+  verified?", "credentials delivered?"). Those turn the tool into a tracker that needs a Completed
+  state and saved progress. That's out of scope for the first demo.
+- **Revisit:** if the prototype is approved, as a separate phase (see Q20 on which system owns status).
+
+## 2026-11-05: Derive, don't ask, whether client-generated Apple credentials are needed
+- **Decision:** whether the client must create the App Store Connect API key and APNs key follows
+  from the Apple access model. It isn't a separate question.
+- **Why:** App Manager can't create API keys (Carlos, Oct 13 and Nov 3; Connect PDF), so App Manager
+  always means the client creates the keys. Asking separately would allow contradictory answers.
+- **Note:** under Admin, the Account Holder still has to enable API access once (client guide draft §8).
+
+## 2026-11-05: Procedures carry an audience
+- **Decision:** each procedure is `client` or `internal`.
+- **Why:** the client guide draft asks for internal engineering detail to stay out of client-facing
+  content. The results page can show the client's checklist separately from Empyrean's.
+
+## 2026-11-05: Account status includes "verification pending"
+- **Why:** the client guide separates "account exists" from "account active and verified" (§4, §5, §9).
+
+## 2026-11-05: Tooling follows the current official Vite template
+- **Decision:** keep the template's oxlint (not ESLint) and TypeScript 7. Vitest is the only added dependency.
+- **Why:** these are the template defaults as of create-vite 9.3.4. Swapping them would add config for no gain.
+
+## 2026-11-03: Own typed question flow, no form library
+- **Decision:** React + TypeScript + Vite with typed questions and typed checklist rules in one system.
+- **Rejected:** SurveyJS and react-jsonschema-form (they keep question conditions in their own
+  expression language, separate from the checklist rules, so the two can drift); forking
+  Udaykalse/multistep-form (no LICENSE file, one commit, type errors, fixed index-based steps);
+  formkitcn (Next.js, about 51 dependencies).
+- **Revisit:** if non-developers need to edit the questions, a form library can sit on top of the
+  same engine.
+
+## 2026-11-03: Engine and UI shape
+- `generateChecklist(answers)` is a pure function: topological sort with a stable playbook-order
+  tie-break, parallel waves, cycle and unknown-ID errors, and conditional prerequisites.
+  Prerequisite edges to tasks that don't apply are dropped.
+- A task is Blocked if it has its own blocker (unknown answer, pending decision) or any upstream task is Blocked.
+- UI is a discriminated-union state machine (`Screen`), not boolean flags.
+- `normalize()` turns draft answers into a complete type, so the engine never null-checks answers.
+- Cross-platform steps are split per platform (e.g. `-ios` / `-android`), because Apple and Google
+  progress independently.
+
+## 2026-11-03: Data handling
+- Fictional data only. No secrets, personal details or identity documents.
+- The Connect email template collects a client's date of birth. This prototype won't.
