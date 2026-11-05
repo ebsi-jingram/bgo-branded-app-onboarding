@@ -1,8 +1,28 @@
-/* Minimal base styles. The placeholder BGO theme arrives in M5. */
+/*
+ * Theme colors sampled from the Benefits Go app icon (public/branding/bgo-icon.png).
+ * Read from the icon's pixels, not from an official brand guide; confirm with Design before any real use.
+ */
 :root {
-  --text: #1f2933;
-  --muted: #52606d;
-  --bg: #ffffff;
+  --bgo-navy: #163e63;
+  --bgo-indigo: #4258a5;
+  --bgo-teal: #39b9a2;
+  --bgo-orange: #f08a21;
+  --bgo-red: #e52328;
+  --bgo-coral: #ed3a24;
+  --bgo-tan: #d4b280;
+
+  --text: #1c2b3a;
+  --muted: #55616e;
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --border: #e6ded2;
+  --accent: var(--bgo-navy);
+  --accent-text: #ffffff;
+  --selected: var(--bgo-indigo);
+  --progress: var(--bgo-teal);
+  --error: #c21d22; /* darker than --bgo-red so small text meets contrast */
+  --banner-bg: var(--bgo-navy);
+  --banner-text: #ffffff;
 
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light;
@@ -21,15 +41,224 @@ body {
   background: var(--bg);
 }
 
-.placeholder {
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--banner-bg);
+  color: var(--banner-text);
+  font-size: 0.875rem;
+}
+
+.banner__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.banner__logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+/* The icon's colors as a thin stripe under the header. */
+.brand-stripe {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bgo-tan),
+    var(--bgo-orange),
+    var(--bgo-red),
+    var(--bgo-indigo),
+    var(--bgo-teal)
+  );
+}
+
+.welcome-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  margin-bottom: 1rem;
+}
+
+.banner__tag {
+  opacity: 0.85;
+}
+
+.page {
   max-width: 40rem;
-  margin: 4rem auto;
+  margin: 2rem auto;
   padding: 0 1rem;
 }
 
-.placeholder__tag {
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.card__title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.lead {
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
+.welcome-list {
+  margin: 0 0 1.5rem;
+  padding-left: 1.25rem;
+  color: var(--muted);
+}
+
+.progress-label {
+  margin: 0 0 0.25rem;
   color: var(--muted);
   font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+}
+
+.progress {
+  width: 100%;
+  height: 0.5rem;
+  margin-bottom: 1.25rem;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border);
+}
+
+/* Browser default track is near-black in Chrome; set track and fill explicitly. */
+.progress::-webkit-progress-bar {
+  background: var(--border);
+}
+
+.progress::-webkit-progress-value {
+  background: var(--progress);
+  border-radius: 999px;
+}
+
+.progress::-moz-progress-bar {
+  background: var(--progress);
+  border-radius: 999px;
+}
+
+.choice-group {
+  border: 0;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.choice-group__legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+
+.choice-group__hint {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.choice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--selected);
+  background: color-mix(in srgb, var(--selected) 7%, transparent);
+}
+
+.choice input {
+  margin-top: 0.25rem;
+  accent-color: var(--selected);
+}
+
+.choice__label {
+  display: block;
+}
+
+.choice__hint {
+  display: block;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.choice--standalone {
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
+}
+
+.text-field {
+  margin-bottom: 1.5rem;
+}
+
+.text-field__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.text-field__input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.field-error {
+  color: var(--error);
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+}
+
+.button--primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.button--secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+.button:focus-visible,
+.choice:has(input:focus-visible),
+.text-field__input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--selected) 45%, transparent);
+  outline-offset: 2px;
 }

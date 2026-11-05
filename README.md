@@ -54,6 +54,6 @@ questions (UI) → DraftAnswers → normalize() → OnboardingAnswers → genera
 - No backend, accounts, uploads, integrations or hosting.
 - Never collects credentials, signing material, personal details or identity documents.
 - SecretSpec field names come from an Oct 29 draft and have not been verified against the brands repo.
-- Colors and branding (M5) are approximate placeholders, not official BGO brand assets.
+- Theme colors are read from the Benefits Go app icon, not from an official brand guide. Confirm with Design before any real use.
 
 See `docs/decisions.md` for design decisions and `docs/open-questions.md` for pending stakeholder questions.

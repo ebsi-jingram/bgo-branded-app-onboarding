@@ -207,18 +207,12 @@ export type ChecklistError<Id extends string = string> =
 // UI state machine
 // ---------------------------------------------------------------------------
 
-export type StepId =
-  | 'organization'
-  | 'platforms'
-  | 'apple'
-  | 'google'
-  | 'contacts'
-  | 'restrictions'
-  | 'blockers'
+export type StepId = 'organization' | 'platforms' | 'apple' | 'google' | 'contacts' | 'restrictions'
 
 /** Exactly one screen at a time; no combination of boolean flags. */
 export type Screen =
   | { kind: 'welcome' }
-  | { kind: 'question'; step: StepId; draft: DraftAnswers }
-  | { kind: 'review'; draft: DraftAnswers }
-  | { kind: 'results'; answers: OnboardingAnswers }
+  /** showErrors becomes true after Continue is pressed with missing answers. */
+  | { kind: 'question'; step: StepId; draft: DraftAnswers; showErrors: boolean }
+  /** Keeps the draft so "Change answers" can go back without losing anything. */
+  | { kind: 'results'; draft: DraftAnswers; answers: OnboardingAnswers }

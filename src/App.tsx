@@ -1,10 +1,44 @@
+import { useReducer } from 'react'
+import { QuestionStep } from './components/QuestionStep'
+import { Results } from './components/Results'
+import { Welcome } from './components/Welcome'
+import { reduce } from './questionnaire/flow'
+
 function App() {
+  const [screen, dispatch] = useReducer(reduce, { kind: 'welcome' })
+
   return (
-    <main className="placeholder">
-      <p className="placeholder__tag">Prototype · not approved process</p>
-      <h1>Benefits Go branded app onboarding</h1>
-      <p>Project foundation is in place. The questionnaire arrives in M3.</p>
-    </main>
+    <>
+      <header className="banner">
+        <span className="banner__brand">
+          <img className="banner__logo" src="/branding/bgo-icon.png" alt="" />
+          Benefits Go · Branded apps
+        </span>
+        <span className="banner__tag">Prototype · not approved process · fictional data only</span>
+      </header>
+      <div className="brand-stripe" aria-hidden="true" />
+      <main className="page">
+        {screen.kind === 'welcome' && <Welcome onStart={() => dispatch({ type: 'start' })} />}
+        {screen.kind === 'question' && (
+          <QuestionStep
+            key={screen.step}
+            step={screen.step}
+            draft={screen.draft}
+            showErrors={screen.showErrors}
+            onChange={(patch) => dispatch({ type: 'update', patch })}
+            onContinue={() => dispatch({ type: 'continue' })}
+            onBack={() => dispatch({ type: 'back' })}
+          />
+        )}
+        {screen.kind === 'results' && (
+          <Results
+            answers={screen.answers}
+            onBack={() => dispatch({ type: 'back' })}
+            onRestart={() => dispatch({ type: 'restart' })}
+          />
+        )}
+      </main>
+    </>
   )
 }
 
